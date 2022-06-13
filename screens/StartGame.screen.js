@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -8,17 +8,21 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  Dimensions,
+  ScrollView,
+  KeyboardAvoidingView
 } from "react-native";
 import Card from "../components/Card";
 import Input from "../components/input";
 import Colors from "../constants/colors";
-import NumberContainer from "../components/NumberContainer"
-import MainButton from '../components/MainButton'
+import NumberContainer from "../components/NumberContainer";
+import MainButton from "../components/MainButton";
 
 const StartGameScreen = (props) => {
   const [enteredValue, setEnteredValue] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const [selectedNumber, setSelectedNumber] = useState();
+  const [ selectedNumber, setSelectedNumber ] = useState();
+  const [ buttonWidth, setButtonWidth ] = useState(Dimensions.get('window').width / 4)
 
   const numberInputHandler = (inputText) => {
     setEnteredValue(inputText.replace(/[^0-9]/g, ""));
@@ -28,6 +32,16 @@ const StartGameScreen = (props) => {
     setEnteredValue("");
     setConfirmed(false);
   };
+  useEffect(() => {
+    const updateLayout = () => {
+      setButtonWidth(Dimensions.get('window').width / 4)
+    }
+  
+    Dimensions.addEventListener('change', updateLayout);
+    return () => {
+      Dimensions.removeEventListener('change', updateLayout)
+    }
+  });
 
   const confirmInputHandler = () => {
     const chosenNumber = parseInt(enteredValue);
@@ -46,50 +60,55 @@ const StartGameScreen = (props) => {
   if (confirmed) {
     confirmedOutput = (
       <Card style={styles.summaryContainer}>
-            <Text>You selected</Text>
-            <NumberContainer>{selectedNumber }</NumberContainer>
-            <MainButton color={Colors.accent}  onPress={()=>props.onStartGame(selectedNumber)} >START GAME</MainButton>
+        <Text>You selected</Text>
+        <NumberContainer>{selectedNumber}</NumberContainer>
+        <MainButton
+          color={Colors.accent}
+          onPress={() => props.onStartGame(selectedNumber)}
+        >
+          START GAME
+        </MainButton>
       </Card>
     );
   }
   return (
-    //   <TouchableWithoutFeedback onPress={ () => {
-    //       Keyboard.dismiss()
-    // }}>
-    <View style={styles.screen}>
-      <Text style={styles.title}>Start a New Game!</Text>
-      <Card style={styles.inputContainer}>
-        <Text>Select a Number</Text>
-        <Input
-          style={styles.input}
-          blurOnSumbit
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="numeric"
-          maxLength={2}
-          onChangeText={numberInputHandler}
-          value={enteredValue}
-        />
-        <View style={styles.buttonContainer}>
-          <View style={styles.button}>
-            <Button
-              title="Reset"
-              onPress={resetInputHandler}
-              color={Colors.accent}
-            />
+    <ScrollView>
+      <KeyboardAvoidingView bahaviour='position' keyboardVerticalOffset={30}>
+      <View style={styles.screen}>
+        <Text style={styles.title}>Start a New Game!</Text>
+        <Card style={styles.inputContainer}>
+          <Text>Select a Number</Text>
+          <Input
+            style={styles.input}
+            blurOnSumbit
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="numeric"
+            maxLength={2}
+            onChangeText={numberInputHandler}
+            value={enteredValue}
+          />
+          <View style={styles.buttonContainer}>
+            <View style={{width:buttonWidth}}>
+              <Button
+                title="Reset"
+                onPress={resetInputHandler}
+                color={Colors.accent}
+              />
+            </View>
+            <View style={{width:buttonWidth}}>
+              <Button
+                title="Confirm"
+                onPress={confirmInputHandler}
+                color={Colors.primary}
+              />
+            </View>
           </View>
-          <View style={styles.button}>
-            <Button
-              title="Confirm"
-              onPress={confirmInputHandler}
-              color={Colors.primary}
-            />
-          </View>
+        </Card>
+        {confirmedOutput}
         </View>
-      </Card>
-      {confirmedOutput}
-    </View>
-    // </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+    </ScrollView>
   );
 };
 const styles = StyleSheet.create({
@@ -103,8 +122,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   inputContainer: {
-    width: 300,
-    maxWidth: "80%",
+    minWidth: 300,
+    width: "80%",
+    maxWidth: "95%",
+    // maxWidth: "80%",
     alignItems: "center",
   },
   buttonContainer: {
@@ -114,7 +135,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   button: {
-    width: 100,
+    // width: 100,
+    width: Dimensions.get("window").width / 3,
   },
   input: {
     width: 50,
@@ -122,8 +144,7 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     marginTop: 20,
-      alignItems: "center",
-    
+    alignItems: "center",
   },
 });
 

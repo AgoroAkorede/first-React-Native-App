@@ -6,8 +6,10 @@ import {
   Alert,
   ScrollView,
   FlatList,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import {ScreenOrientation} from 'expo'
 
 import NumberContainer from "../components/NumberContainer";
 import Card from "../components/Card";
@@ -28,19 +30,35 @@ const generateRandomBetween = (min, max, exclude) => {
 
 const renderListItem = (listLength, itemData) => (
   <View style={styles.listItem}>
-    <Text style={styles.text}>#{listLength-itemData.index}</Text>
+    <Text style={styles.text}>#{listLength - itemData.index}</Text>
     <Text style={styles.text}>{itemData.item}</Text>
   </View>
 );
 
 const GameScreen = (props) => {
+  // ScreenOreintation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
+
   const initialGuess = generateRandomBetween(1, 100, props.userChoice);
   const [currentGuess, setCurrentGuess] = useState(initialGuess);
-  const [pastGuess, setPastGuesses] = useState([initialGuess.toString()]);
+  const [ pastGuess, setPastGuesses ] = useState([ initialGuess.toString() ]);
+  const [ availableDeviceWidth, setAvailableDeviceWidth ] = useState(Dimensions.get('window').width)
+  const [ availableDeviceHeight, setAvailableDeviceHeight ] = useState(Dimensions.get('window').height)
+  
 
   const currentLow = useRef(1);
   const currentHigh = useRef(100);
   const { userChoice, onGameOver } = props;
+  useEffect(() => {
+    const updateLayout = () => {
+      setAvailableDeviceWidth(Dimensions.get('window').width);
+      setAvailableDeviceHeight(Dimensions.get('window').height);
+    }
+    Dimensions.addEventListener('change', updateLayout)
+
+    return () => {
+      Dimensions.removeEventListener('change',updateLayout)
+    }
+  });
 
   useEffect(() => {
     if (currentGuess === props.userChoice) {
@@ -74,12 +92,40 @@ const GameScreen = (props) => {
     setPastGuesses((curPastGuess) => [nextNumber.toString(), ...curPastGuess]);
   };
 
+  if (availableDeviceHeight < 500) {
+    return (
+      <View style={styles.screen}>
+        <Text>Opponent's Guess</Text>
+        <View style={styles.controls}>
+          <MainButton
+            // style={styles.button}
+            onPress={nextGuessHandler.bind(this, "lower")}
+          >
+            <Ionicons name="md-remove" size={24} color="white" />
+          </MainButton>
+          <NumberContainer>{currentGuess}</NumberContainer>
+          <MainButton onPress={nextGuessHandler.bind(this, "higher")}>
+            <Ionicons name="md-add" size={24} color="white" />
+          </MainButton>
+        </View>
+        <View style={styles.listContainer}>
+          <FlatList
+            keyExtractor={(item) => item}
+            data={pastGuess}
+            renderItem={renderListItem.bind(this, pastGuess.length)}
+            contentContainerStyle={styles.list}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.screen}>
       <Text>Opponent's Guess</Text>
       <NumberContainer>{currentGuess}</NumberContainer>
 
-      <Card style={styles.buttonContainer}>
+      <Card>
         <View style={styles.buttonContainer}>
           <MainButton
             // style={styles.button}
@@ -99,7 +145,7 @@ const GameScreen = (props) => {
         <FlatList
           keyExtractor={(item) => item}
           data={pastGuess}
-          renderItem={ renderListItem.bind(this, pastGuess.length) }
+          renderItem={renderListItem.bind(this, pastGuess.length)}
           contentContainerStyle={styles.list}
         />
       </View>
@@ -115,8 +161,9 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 20,
-    width: 400,
-    maxWidth: "90%",
+    // width: 400,
+    width: Dimensions.get("window").width > 350 ? 400 : 275,
+    // maxWidth: "90%",
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 15,
@@ -133,9 +180,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "space-between",
     width: "100%",
+    marginTop: Dimensions.get("window").height > 600 ? 20 : 5,
   },
   listContainer: {
-    width: "60%",
+    width: Dimensions.get("window").width > 350 ? "60%" : "30%",
     flex: 1,
   },
   text: {
@@ -143,8 +191,13 @@ const styles = StyleSheet.create({
   },
   list: {
     flexGrow: 1,
-   
     justifyContent: "flex-end",
   },
+  controls: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems:"center",
+    width:'80%'
+  }
 });
 export default GameScreen;
